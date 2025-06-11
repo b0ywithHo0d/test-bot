@@ -1,0 +1,16 @@
+[google]
+credentials = """
+{
+    "type": "service_account",
+  "project_id": "i-multiplexer-462506-a4",
+  "private_key_id": "a188c5230deea0e52ed7388ed2e3b1f517d60c50",
+  "private_key": "-----BEGIN PRIVATE KEY-----\\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCM2dH7u4VNVjKt\\n3KsE4aLabJtHrNePfOt4nUE7Zjq7zFsoLLDJR/3I6vJP7oESpj6Ib+sQcJmzmlNc\\nc2Z5pTfY2lrtwp8ubDW8nAUi45cNYRiKGF6VFOZhgqez3xeYIy/dsvvAPo0Fk5l+\\nW0BJdrUxZ23daNT8Gzj/QyP7CxHY6/ZChSZqoEP39D4KX6u8s3JHThyXQxzpeFBh\\nChUw8M3aIod6y9IiuRAw+6oOsEZ7Mof6bl+lZ/lIFX7PBfpvTaKJw8qJuACgRaxE\\nDh230VNdNIzFHQxpoN+H245NkLzzARNPLzuKrkklOvjAxLSvPBKMHkulip7EGGq9\\nGXh4QXMxAgMBAAECggEADfZPpu0NRz/KsUplF4xIaO+IKwA6tAoVi3THMRyuqMwW\\nozJe6ez9fsuvbnX9jHw3Sa4SdqQ60D91kP4Ng/R5R0FJ7zSyM9ddMk+jALTf1d8w\\noAvPYGbceYEKn713KMkgJxFlfEaXExzxA8IG6uFeD8IpdV+9cSo/qaodqHaN89s2\\nfbOhOeXsc/Q4BuKCOWE4UcSrNavz1DsdK/TtoOEwufk37KABMj2ghGwlaNt7VT1V\\nZrLMRH9G41IP64y0clQ/buPEwGZmYCzeOnSyY5D2pCGM8yZbP8IzHoxJnYD2mBrG\\8gyBM6QTkt+YvYeyrCo8bs+jg1W1ve5gnu4XLgEjoQKBgQC/ZqQUFbix12IkiHkV\\nQ8WGCrigtGpJvdQ3S4VaEmg+jzD3nWMcbkfNk+mM+T02SBl1iJM0kCgkIIsQgdas\\nQnKkk6CKMLfw47hpiazqcvBvoWIAQ9Z/NJEESe9S65O01+icw5lt9GkD6Do7np2I\\nAv7q3Th0DF5o3RQB2GJZbJ/gKQKBgQC8Y5GDmkXLyGS0cnPGS7ag6bG4Fbao9ahC\\nVtRn+wQm5nX9Qvr4uXk/2mtQuZlHiU+z46HzzgB4+vmGsHZ9/ivr2V0N3LVRQ/XY\\n+D/ypx9/Td9kV7C8DmgmZhS8FydUeL+j7YzPBQJ9Iy9zLvFRhc1WTGZuK0fe1GSt\\nF8Ha46k7yQKBgHqHl/SvryxSqSagI3vEhhf4lxdySDTrDIdVlooCDLA39O4f2Ioj\\n412tGi/AgzpTz9CZXTuiKcBvAPfRVv+yDjhjtbuh0q+o6K7Pj14LtPaRxu5Kf2+x\\n1EB9oHNiEo4MRoLNCVUFyZDRwy3Vrh2bZVwvwOsx2+Kf3SYNQ3DiBDt5AoGAfSnS\\nBhO7h5cOgW0BSqAHKIXbk6ipgTwlnF3AJY16xrWbcrbLs/DWg/wEDNAi7IpoL+Zv\\nNWKKodZtbnVTZIY4fCwgTRN0TBfRAWR+aCNtI9GDOFGilG8l900fPZBMiyzmdm1f\\nfjOf4bA82FQ59KXnNQzxiQSsbXnDodUE8P8M8zECgYBt+zWPmkm/Ij30EMVqPdQI\\n8mZ6UE0tvwMXBrsO+tThzb7eSUIYF79h9AtZzN0QxSsWlxVNs/lzp0Gn9HIcQl3J\\nOQ4CKaY3tDbi4AQ1brDkYYsKOsZK1xBgdI4F8k7jLL6+qrjBxJXWhUQVeWFNw9u4\\nX1B0wEbO8h3eeWIZnwZ7SQ==\\n-----END PRIVATE KEY-----\\n",
+  "client_email": "id-578@i-multiplexer-462506-a4.iam.gserviceaccount.com",
+  "client_id": "111022750996305513428",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/id-578%40i-multiplexer-462506-a4.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
+"""
