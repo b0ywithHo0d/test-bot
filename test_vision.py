@@ -4,111 +4,112 @@ from google.oauth2 import service_account
 from PIL import Image
 import io
 import requests
-import xml.etree.ElementTree as ET
-from openai import OpenAI
+import openai
 
-# ✅ API 키 설정
+# --- Streamlit 기본 설정 ---
+st.set_page_config(page_title="약사봇", layout="wide")
+st.title("💊 약사봇: 약 성분 분석 및 복용 주의 안내")
+
+# --- 구글 Vision API 인증 ---
 google_creds = dict(st.secrets["google_cloud"])
-google_creds["private_key"] = google_creds["private_key"].replace("\\\\n", "\n")
+google_creds["private_key"] = google_creds["private_key"].replace("\\n", "\n")
 credentials = service_account.Credentials.from_service_account_info(google_creds)
 vision_client = vision.ImageAnnotatorClient(credentials=credentials)
 
-openai_client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-drug_api_key = st.secrets["drug_api"]["service_key"]
+# --- OpenAI API 키 설정 ---
+openai.api_key = st.secrets["openai_api_key"]
+openai_client = openai
 
-# ✅ Streamlit 제목
-st.title("💊 약사봇 - 사진 기반 복약 위험 분석기")
+# --- 의약품 API 설정 ---
+DRUG_API_KEY = st.secrets["drug_api_key"]
+DRUG_API_URL = "https://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList"
 
-uploaded_files = st.file_uploader(
-    "📷 복용 중인 약 사진 여러 장을 업로드하세요", 
-    type=["png", "jpg", "jpeg"], 
-    accept_multiple_files=True
-)
+# --- 약 사진 업로드 ---
+uploaded_files = st.file_uploader("약 사진을 하나 이상 업로드하세요", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
 
-drug_infos = []
-extracted_ingredients = []  # 성분 추출 리스트
+# --- 정보 저장 리스트 ---
+ingredient_infos = []  # (약 이름, 성분)
 
 if uploaded_files:
-    for uploaded_file in uploaded_files:
-        st.image(uploaded_file, caption=uploaded_file.name, use_column_width=True)
-
-        # ✅ Google Vision API로 텍스트 추출
+    for idx, uploaded_file in enumerate(uploaded_files):
+        st.markdown(f"### 📸 {idx + 1}번 약 사진")
         image = Image.open(uploaded_file)
+        st.image(image, caption=f"{idx + 1}번 이미지", use_column_width=True)
+
+        # Vision API 이미지 처리
         buffered = io.BytesIO()
         image.save(buffered, format="PNG")
-        vision_image = vision.Image(content=buffered.getvalue())
+        content = buffered.getvalue()
+        vision_image = vision.Image(content=content)
         response = vision_client.text_detection(image=vision_image)
         texts = response.text_annotations
 
-        if not texts:
-            st.warning(f"❌ 텍스트 인식 실패: {uploaded_file.name}")
-            continue
+        if texts:
+            extracted_text = texts[0].description.replace('\n', ' ')
+            st.text_area("📝 인식된 텍스트:", extracted_text, height=100)
 
-        extracted_text = texts[0].description.strip()
-        keyword = extracted_text.split("\n")[0]  # 첫 줄 → 약 이름 추정
-        st.markdown(f"🔍 **인식된 약 이름(추정):** `{keyword}`")
+            # 검색 키워드 추출 (간단하게 첫 5단어 중 길이가 긴 단어 사용)
+            keyword = "".join([w for w in extracted_text.split() if len(w) > 3][:1])
 
-        # ✅ 식약처 API 조회
-        url = "http://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList"
-        params = {
-            "serviceKey": drug_api_key,
-            "itemName": keyword,
-            "type": "xml",
-            "numOfRows": "1"
-        }
+            # 의약품 API 호출
+            params = {
+                "serviceKey": DRUG_API_KEY,
+                "itemName": keyword,
+                "type": "json",
+                "numOfRows": 1,
+                "pageNo": 1
+            }
+            api_response = requests.get(DRUG_API_URL, params=params)
 
-        res = requests.get(url, params=params)
-        if res.status_code == 200:
-            root = ET.fromstring(res.content)
-            item = root.find(".//item")
-            if item is not None:
-                entpName = item.findtext("entpName")
-                efcy = item.findtext("efcyQesitm")
-                useMethod = item.findtext("useMethodQesitm")
-                atpn = item.findtext("atpnQesitm")
-                ingr = item.findtext("mainIngr") or ""
-
-                drug_infos.append({
-                    "name": keyword,
-                    "entp": entpName,
-                    "effect": efcy,
-                    "usage": useMethod,
-                    "warning": atpn,
-                    "ingredient": ingr
-                })
-
-                extracted_ingredients.append(ingr)
-                st.success(f"✅ `{keyword}` 정보 수집 완료")
-                st.markdown(f"**효능:** {efcy}")
-                st.markdown(f"**복용법:** {useMethod}")
-                st.markdown(f"**주의사항:** {atpn}")
+            ingr = None
+            if api_response.status_code == 200:
+                try:
+                    item = api_response.json()['body']['items'][0]
+                    ingr = item.get("efcyQesitm", None)
+                    st.success("✅ 의약품 정보 조회 성공")
+                    st.write("**효능 및 성분 요약:**")
+                    st.write(ingr)
+                except:
+                    st.warning("⚠️ 의약품 API에서 정보를 찾을 수 없습니다. GPT가 판단합니다.")
             else:
-                st.warning(f"📭 `{keyword}` 관련 의약품 정보 없음 → 텍스트 내용 기반 GPT 분석 예정")
-                extracted_ingredients.append(keyword)
+                st.error("❌ API 요청 실패")
+
+            ingredient_infos.append((keyword, ingr or extracted_text))
+
         else:
-            st.error("🚫 식약처 API 호출 실패")
+            st.warning("❌ 텍스트를 인식하지 못했습니다.")
 
-# ✅ GPT 분석
-if len(extracted_ingredients) >= 2:
-    st.subheader("🤖 GPT 분석: 복합 복용 주의사항")
+    # --- GPT 분석 ---
+    if len(ingredient_infos) >= 2:
+        st.markdown("---")
+        st.subheader("🤖 GPT 분석: 복합 복용 주의사항")
 
-    ingredient_list = "\n".join([f"- {i}" for i in extracted_ingredients])
-    prompt = f"""
-한 사용자가 다음 성분 또는 약 이름들이 포함된 약을 함께 복용 중입니다.
-이 약들 간의 상호작용, 부작용 가능성, 주의사항 등을 복약 전문가의 시각에서 간단히 안내해주세요.
+        structured_list = "\n".join([
+            f"{idx+1}번 약: {name}\n  - 성분: {ingredient}"
+            for idx, (name, ingredient) in enumerate(ingredient_infos)
+        ])
 
-성분 또는 약 목록:
-{ingredient_list}
+        prompt = f"""
+사용자가 아래의 약들을 함께 복용 중입니다.
+각 약의 이름과 주요 성분은 다음과 같습니다:
+
+{structured_list}
+
+이 약들을 함께 복용할 때 주의해야 할 점, 부작용 가능성, 성분 간 상호작용을 복약 전문가로서 정리해 주세요.
+과학적이되, 일반인이 이해할 수 있는 말로 설명해 주세요.
 """
 
-    with st.spinner("GPT가 분석 중입니다..."):
-        response = openai_client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "너는 약학 지식을 갖춘 복약 도우미야."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        result = response.choices[0].message.content.strip()
-        st.markdown("🧠 **GPT 분석 결과:**")
-        st.info(result)
+        with st.spinner("GPT가 분석 중입니다..."):
+            response = openai_client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "너는 약학 지식을 갖춘 복약 도우미야."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            result = response.choices[0].message.content.strip()
+            st.markdown("🧠 **GPT 분석 결과:**")
+            st.info(result)
+
+else:
+    st.info("📤 하나 이상의 약 사진을 업로드해주세요.")
