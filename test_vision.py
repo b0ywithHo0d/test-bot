@@ -131,6 +131,7 @@ if len(extracted_ingredients_all) >= 2:
                 {"role": "user", "content": prompt}
             ]
         )
+        st.write(response)
         result = response.choices[0].message.content.strip()
         st.markdown("🧠 **GPT 분석 결과:**")
         st.info(result)
