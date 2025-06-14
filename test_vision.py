@@ -26,6 +26,7 @@ uploaded_files = st.file_uploader(
 
 drug_infos = []
 extracted_ingredients_all = []  # 전체 성분 누적 리스트
+ocr_texts_per_image = []       # 각 사진별 원문 텍스트 저장
 
 if uploaded_files:
     for uploaded_file in uploaded_files:
@@ -44,6 +45,12 @@ if uploaded_files:
             continue
 
         extracted_text = texts[0].description.strip()
+        ocr_texts_per_image.append((uploaded_file.name, extracted_text))
+
+        # 사용자에게 원문 텍스트 보여주기
+        with st.expander(f"📝 `{uploaded_file.name}`에서 추출된 텍스트 보기"):
+            st.text(extracted_text)
+
         keyword = extracted_text.split("\n")[0]  # 첫 줄: 약 이름 추정
         st.markdown(f"🔍 **인식된 약 이름(추정):** `{keyword}`")
 
@@ -67,7 +74,6 @@ if uploaded_files:
                 atpn = item.findtext("atpnQesitm")
                 ingr_raw = item.findtext("mainIngr") or ""
 
-                # 성분 정리 (여러 성분이 ','나 '/' 등으로 구분돼 있을 수 있으니 적절히 나누기)
                 ingr_list = [ingr.strip() for ingr in ingr_raw.replace('/', ',').split(',') if ingr.strip()]
 
                 drug_infos.append({
@@ -79,7 +85,7 @@ if uploaded_files:
                     "ingredients": ingr_list
                 })
 
-                extracted_ingredients_all.extend(ingr_list)  # 전체 성분 리스트에 추가
+                extracted_ingredients_all.extend(ingr_list)
 
                 st.success(f"✅ `{keyword}` 정보 수집 완료")
                 st.markdown(f"**효능:** {efcy}")
@@ -88,24 +94,32 @@ if uploaded_files:
                 st.markdown(f"**주요 성분:** {', '.join(ingr_list)}")
             else:
                 st.warning(f"📭 `{keyword}` 관련 의약품 정보 없음 → 텍스트 기반 GPT 분석 예정")
-                # 성분 대신 약 이름 자체를 넣어도 무방
                 extracted_ingredients_all.append(keyword)
         else:
             st.error("🚫 식약처 API 호출 실패")
 
-# 중복 제거 및 정리
+# 중복 제거
 extracted_ingredients_all = list(set(extracted_ingredients_all))
 
-# GPT 분석 (성분 2개 이상일 때만)
+# GPT 분석
 if len(extracted_ingredients_all) >= 2:
     st.subheader("🤖 GPT 분석: 복합 복용 주의사항")
 
-    ingredient_list_text = "\n".join([f"- {i}" for i in extracted_ingredients_all])
-    prompt = f"""
-사용자가 다음 약 성분들을 포함하는 약들을 함께 복용하고 있습니다.
-각 성분 간 상호작용, 부작용, 주의사항을 약사 시점에서 간단명료하게 안내해주세요.
+    # OCR 텍스트와 성분 정보를 GPT 프롬프트에 같이 넣기
+    ocr_text_summary = "\n\n".join(
+        [f"사진 파일명: {name}\n추출 텍스트:\n{txt}" for name, txt in ocr_texts_per_image]
+    )
 
-성분 목록:
+    ingredient_list_text = "\n".join([f"- {i}" for i in extracted_ingredients_all])
+
+    prompt = f"""
+사용자가 다음 사진들에서 추출된 텍스트와 해당 약 성분 목록을 바탕으로 여러 약을 함께 복용하고 있습니다.
+복용 시 약들 간의 상호작용, 부작용, 주의사항 등을 약사 시점에서 간단명료하게 안내해주세요.
+
+=== 사진별 OCR 텍스트 ===
+{ocr_text_summary}
+
+=== 약 성분 목록 ===
 {ingredient_list_text}
 """
 
