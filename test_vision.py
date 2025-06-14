@@ -8,7 +8,7 @@ from io import BytesIO
 
 # ✅ API 키 설정
 openai.api_key = st.secrets["openai_api_key"]["openai_api_key"]
-drug_api_key = st.secrets["drug_api_key"]
+drug_api_key = st.secrets["service_key"]["drug_api_key"]
 
 # ✅ Streamlit UI
 st.title("💊 약 사진 분석 & 성분 상호작용 체크봇")
