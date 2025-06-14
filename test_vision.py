@@ -1,41 +1,36 @@
+# streamlit_ocr_app.py
+import streamlit as st
 from google.cloud import vision
 from google.oauth2 import service_account
+from PIL import Image
+import io
 
-def test_vision_api(key_path="gcp_key.json"):
-    try:
-        # 인증 정보 로드
-        credentials = service_account.Credentials.from_service_account_file(key_path)
-        client = vision.ImageAnnotatorClient(credentials=credentials)
+st.title("🧾 이미지에서 텍스트 추출 (Google Vision API)")
 
-        # 테스트용 이미지 URL (아래 이미지에는 "Hello"라는 텍스트가 있음)
-        image_uri = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Hello_world_in_various_languages.svg/1024px-Hello_world_in_various_languages.svg.png"
-        image = vision.Image()
-        image.source.image_uri = image_uri
+# 이미지 업로드
+uploaded_file = st.file_uploader("이미지를 업로드하세요", type=["png", "jpg", "jpeg"])
+if uploaded_file:
+    image = Image.open(uploaded_file)
+    st.image(image, caption="업로드된 이미지", use_column_width=True)
 
-        # 텍스트 감지 요청
-        response = client.text_detection(image=image)
+    # Google Cloud Vision API 인증 (secrets 사용)
+    google_creds = dict(st.secrets["google_cloud"])
+    google_creds["private_key"] = google_creds["private_key"].replace("\\\\n", "\n")
+    credentials = service_account.Credentials.from_service_account_info(google_creds)
+    client = vision.ImageAnnotatorClient(credentials=credentials)
 
-        if response.error.message:
-            print("API 호출 에러:", response.error.message)
-            return False
+    # 이미지 읽기
+    buffered = io.BytesIO()
+    image.save(buffered, format="PNG")
+    content = buffered.getvalue()
+    vision_image = vision.Image(content=content)
 
-        texts = response.text_annotations
-        if not texts:
-            print("텍스트가 감지되지 않았습니다.")
-            return False
+    # 텍스트 감지 요청
+    response = client.text_detection(image=vision_image)
+    texts = response.text_annotations
 
-        print("검출된 텍스트 중 첫번째(전체 텍스트):")
-        print(texts[0].description)
-        return True
-
-    except Exception as e:
-        print("Vision API 테스트 중 예외 발생:", e)
-        return False
-
-
-if __name__ == "__main__":
-    success = test_vision_api()
-    if success:
-        print("Google Vision API 테스트 성공!")
+    if texts:
+        st.subheader("✅ 인식된 텍스트:")
+        st.text(texts[0].description)
     else:
-        print("Google Vision API 테스트 실패!")
+        st.warning("❌ 텍스트를 인식하지 못했습니다.")
